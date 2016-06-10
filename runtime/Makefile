@@ -1,7 +1,7 @@
 include ../include/generated/variables.mak
 include $(MISOC_DIRECTORY)/software/common.mak
 
-OBJECTS := main.o isr.o
+OBJECTS := main.o isr.o i2c.o pca9548.o si5324.o
 
 all: runtime.bin
 

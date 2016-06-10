@@ -7,18 +7,18 @@ from migen.build.platforms import kc705
 from migen.build.xilinx.vivado import XilinxVivadoToolchain
 from migen.build.xilinx.ise import XilinxISEToolchain
 from misoc.cores import gpio
-from misoc.targets.kc705 import MiniSoC, soc_kc705_args, soc_kc705_argdict
+from misoc.targets.kc705 import BaseSoC, soc_kc705_args, soc_kc705_argdict
 from misoc.integration.builder import Builder, builder_args, builder_argdict
 
-class Si5324Test(MiniSoC):
+class Si5324Test(BaseSoC):
     csr_map = {
         "i2c": 20,
         "si5324_rst_n": 21
     }
-    csr_map.update(MiniSoC.csr_map)
+    csr_map.update(BaseSoC.csr_map)
 
     def __init__(self, cpu_type="or1k", **kwargs):
-        MiniSoC.__init__(self,
+        BaseSoC.__init__(self,
                          cpu_type=cpu_type,
                          sdram_controller_type="minicon",
                          l2_size=128*1024,
