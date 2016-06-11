@@ -92,15 +92,18 @@ void si5324_init_125MHz(int bwsel)
         abort();
     }
 
-    const int N1_HS  = 5,
-              NC1_LS = 8,
-              N2_HS  = 7,
-              N2_LS  = 360,
-              N31    = 53;
+    // NOTE: the logical parameters DO NOT MAP to physical values written
+    // into registers. They have to be mapped; see the datasheet.
+    // DSPLLsim reports the logical parameters in the design summary, not
+    // the physical register values (but those are present separately).
+    const int N1_HS  = 1,   // 5
+              NC1_LS = 7,   // 8
+              N2_HS  = 3,   // 7
+              N2_LS  = 359, // 360
+              N31    = 62;
 
-    si5324_write(0,  (si5324_read(0) & 0xdf) | /*CKOUT_ALWAYS_ON=1*/0x20);
     si5324_write(2,  (si5324_read(2) & 0x0f) | (bwsel << 4));
-    // si5324_write(3,  (si5324_read(3)       ) | /*SQ_ICAL=1*/0x10);
+    si5324_write(3,  (si5324_read(3)       ) | /*SQ_ICAL=1*/0x10);
     si5324_write(6,  (si5324_read(6) & 0x07) | /*SFOUT1_REG=b111*/0x07);
     si5324_write(25,  N1_HS  << 5);
     si5324_write(31,  NC1_LS >> 16);
@@ -112,12 +115,8 @@ void si5324_init_125MHz(int bwsel)
     si5324_write(43,  N31    >> 16);
     si5324_write(44,  N31    >> 8);
     si5324_write(45,  N31);
+    si5324_write(137, si5324_read(137) | /*FASTLOCK=1*/0x01);
     si5324_write(136, /*ICAL=1*/0x40);
-}
-
-int si5324_active()
-{
-    return (si5324_read(128) & /*CK1_ACTV_REG=1*/0x01) != 0;
 }
 
 int si5324_has_input()
@@ -133,4 +132,9 @@ int si5324_has_xtal()
 int si5324_locked()
 {
     return (si5324_read(130) & /*LOL_INT=1*/0x01) == 0;
+}
+
+void si5324_set_skew(int8_t skew)
+{
+    si5324_write(142, skew);
 }

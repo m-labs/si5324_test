@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <generated/csr.h>
 #include <irq.h>
 #include <uart.h>
 #include "i2c.h"
@@ -26,9 +27,21 @@ int main(void)
     while(!si5324_has_input());
     printf("PLL lock... ");
     while(!si5324_locked());
-    printf("actviation... ");
-    while(!si5324_active());
     printf("ok\n");
 
-    while(1);
+    uint8_t skew = 0;
+    while(1) {
+        si5324_set_skew(skew);
+        printf("skew set to %d\n", (int8_t)skew);
+        skew = (skew + 1) % 8;
+
+        timer0_en_write(0);
+        timer0_load_write(CONFIG_CLOCK_FREQUENCY); // 1s
+        timer0_reload_write(0);
+        timer0_en_write(1);
+
+        timer0_update_value_write(1);
+        while(timer0_value_read() != 0)
+            timer0_update_value_write(1);
+    }
 }

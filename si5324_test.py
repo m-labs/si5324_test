@@ -15,13 +15,21 @@ class Si5324ClockRouting(Module):
         si5324_clkin    = platform.request("si5324_clkin")
         si5324_clkout   = platform.request("si5324_clkout")
         user_sma_gpio_p = platform.request("user_sma_gpio_p")
+        user_sma_gpio_n = platform.request("user_sma_gpio_n")
+
+        dirty_clk = ClockSignal("sys") # 125MHz
+        self.specials += [
+            Instance("OBUFDS",
+                     i_I=dirty_clk,
+                     o_O=si5324_clkin.p, o_OB=si5324_clkin.n),
+            Instance("OBUF",
+                     i_I=dirty_clk,
+                     o_O=user_sma_gpio_n)
+        ]
 
         clean_clk = Signal()
         clean_clk2 = Signal()
         self.specials += [
-            Instance("OBUFDS",
-                     i_I=ClockSignal("sys"),
-                     o_O=si5324_clkin.p, o_OB=si5324_clkin.n),
             Instance("IBUFDS_GTE2",
                      i_I=si5324_clkout.p, i_IB=si5324_clkout.n,
                      o_O=clean_clk),
