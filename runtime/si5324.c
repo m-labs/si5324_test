@@ -6,8 +6,6 @@
 
 void si5324_reset()
 {
-    printf("%s\n", __func__);
-
     timer0_en_write(0);
     timer0_load_write(CONFIG_CLOCK_FREQUENCY/50); // 20ms
     timer0_reload_write(0);
@@ -74,8 +72,6 @@ uint8_t si5324_read(uint8_t reg)
 
 uint16_t si5324_ident()
 {
-    printf("%s\n", __func__);
-
     return (si5324_read(134) << 8) | si5324_read(135);
 }
 
@@ -89,6 +85,8 @@ uint16_t si5324_ident()
 //   606 (BWSEL_REG = 4)
 void si5324_init_125MHz(int bwsel)
 {
+    si5324_reset();
+
     if(si5324_ident() != 0x0182) {
         puts("Si5324 does not have expected product number");
         abort();
@@ -100,8 +98,9 @@ void si5324_init_125MHz(int bwsel)
               N2_LS  = 360,
               N31    = 53;
 
+    si5324_write(0,  (si5324_read(0) & 0xdf) | /*CKOUT_ALWAYS_ON=1*/0x20);
     si5324_write(2,  (si5324_read(2) & 0x0f) | (bwsel << 4));
-    si5324_write(3,  (si5324_read(3)       ) | /*SQ_ICAL=1*/0x10);
+    // si5324_write(3,  (si5324_read(3)       ) | /*SQ_ICAL=1*/0x10);
     si5324_write(6,  (si5324_read(6) & 0x07) | /*SFOUT1_REG=b111*/0x07);
     si5324_write(25,  N1_HS  << 5);
     si5324_write(31,  NC1_LS >> 16);
@@ -116,12 +115,22 @@ void si5324_init_125MHz(int bwsel)
     si5324_write(136, /*ICAL=1*/0x40);
 }
 
-int si5324_locked()
-{
-    return (si5324_read(132) & /*LOL_FLG=1*/0x02) != 0;
-}
-
 int si5324_active()
 {
     return (si5324_read(128) & /*CK1_ACTV_REG=1*/0x01) != 0;
+}
+
+int si5324_has_input()
+{
+    return (si5324_read(129) & /*LOS1_INT=1*/0x02) == 0;
+}
+
+int si5324_has_xtal()
+{
+    return (si5324_read(129) & /*LOSX_INT=1*/0x01) == 0;
+}
+
+int si5324_locked()
+{
+    return (si5324_read(130) & /*LOL_INT=1*/0x01) == 0;
 }

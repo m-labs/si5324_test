@@ -18,13 +18,15 @@ int main(void)
     pca9548_select(7);
     pca9548_readback();
 
-    si5324_reset();
-    printf("Si5324 ident: %04x\n", si5324_ident());
-
     si5324_init_125MHz(4);
-    printf("waiting for PLL to lock... ");
+    printf("waiting for ");
+    printf("xtal... ");
+    while(!si5324_has_xtal());
+    printf("input... ");
+    while(!si5324_has_input());
+    printf("PLL lock... ");
     while(!si5324_locked());
-    printf("for CK1 to activate... ");
+    printf("actviation... ");
     while(!si5324_active());
     printf("ok\n");
 

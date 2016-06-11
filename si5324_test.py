@@ -10,6 +10,25 @@ from misoc.cores import gpio
 from misoc.targets.kc705 import BaseSoC, soc_kc705_args, soc_kc705_argdict
 from misoc.integration.builder import Builder, builder_args, builder_argdict
 
+class Si5324ClockRouting(Module):
+    def __init__(self, platform):
+        si5324_clkin    = self.platform.request("si5324_clkin")
+        si5324_clkout   = self.platform.request("si5324_clkout")
+        user_sma_gpio_p = self.platform.request("user_sma_gpio_p")
+
+        clean_clk = Signal()
+        self.specials += [
+            Instance("OBUFDS",
+                     i_I=self.cd_sys.clk,
+                     o_O=si5324_clkin.p, o_OB=si5324_clkin.n),
+            Instance("IBUFDS",
+                     i_I=si5324_clkout.p, i_IB=si5324_clkout.n,
+                     o_O=clean_clk),
+            Instance("OBUF",
+                     i_I=clean_clk,
+                     o_O=user_sma_gpio_p)
+        ]
+
 class Si5324Test(BaseSoC):
     csr_map = {
         "i2c": 20,
