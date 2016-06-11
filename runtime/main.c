@@ -6,13 +6,6 @@
 #include "pca9548.h"
 #include "si5324.h"
 
-void fail(const char *reason);
-void fail(const char *reason)
-{
-    puts(reason);
-    abort();
-}
-
 int main(void)
 {
     irq_setmask(0);
@@ -23,7 +16,17 @@ int main(void)
 
     i2c_init(0);
     pca9548_select(7);
+    pca9548_readback();
+
     si5324_reset();
+    printf("Si5324 ident: %04x\n", si5324_ident());
+
+    si5324_init_125MHz(4);
+    printf("waiting for PLL to lock... ");
+    while(!si5324_locked());
+    printf("for CK1 to activate... ");
+    while(!si5324_active());
+    printf("ok\n");
 
     while(1);
 }

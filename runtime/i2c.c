@@ -6,7 +6,7 @@
 static void i2c_halfperiod()
 {
     timer0_en_write(0);
-    timer0_load_write(CONFIG_CLOCK_FREQUENCY/10000);
+    timer0_load_write(CONFIG_CLOCK_FREQUENCY/10000); //5kHz
     timer0_reload_write(0);
     timer0_en_write(1);
 
@@ -74,8 +74,6 @@ static void i2c_scl_o(int busno, int o)
 
 void i2c_init(int busno)
 {
-    printf("%s\n", __func__);
-
     /* Set SCL as output, and high level */
     i2c_scl_o(busno, 1);
     i2c_scl_oe(busno, 1);
@@ -95,8 +93,6 @@ void i2c_init(int busno)
 
 void i2c_start(int busno)
 {
-    printf("%s\n", __func__);
-
     /* Set SCL high then SDA low */
     i2c_scl_o(busno, 1);
     i2c_halfperiod();
@@ -104,10 +100,19 @@ void i2c_start(int busno)
     i2c_halfperiod();
 }
 
+void i2c_restart(int busno)
+{
+    /* Set SCL low then SDA high */
+    i2c_scl_o(busno, 0);
+    i2c_halfperiod();
+    i2c_sda_oe(busno, 0);
+    i2c_halfperiod();
+    /* Do a regular start */
+    i2c_start(busno);
+}
+
 void i2c_stop(int busno)
 {
-    printf("%s\n", __func__);
-
     /* First, make sure SCL is low, so that the target releases the SDA line */
     i2c_scl_o(busno, 0);
     i2c_halfperiod();
@@ -121,8 +126,6 @@ void i2c_stop(int busno)
 
 int i2c_write(int busno, int b)
 {
-    printf("%s(%02x)\n", __func__, b);
-
     int i;
 
     /* MSB first */
@@ -149,8 +152,6 @@ int i2c_write(int busno, int b)
 
 int i2c_read(int busno, int ack)
 {
-    printf("%s(%d)... ", __func__, ack);
-
     int i;
     unsigned char b;
 
@@ -180,8 +181,6 @@ int i2c_read(int busno, int ack)
     /* then set SCL high */
     i2c_scl_o(busno, 1);
     i2c_halfperiod();
-
-    printf("%02x\n", b);
 
     return b;
 }
