@@ -12,20 +12,24 @@ from misoc.integration.builder import Builder, builder_args, builder_argdict
 
 class Si5324ClockRouting(Module):
     def __init__(self, platform):
-        si5324_clkin    = self.platform.request("si5324_clkin")
-        si5324_clkout   = self.platform.request("si5324_clkout")
-        user_sma_gpio_p = self.platform.request("user_sma_gpio_p")
+        si5324_clkin    = platform.request("si5324_clkin")
+        si5324_clkout   = platform.request("si5324_clkout")
+        user_sma_gpio_p = platform.request("user_sma_gpio_p")
 
         clean_clk = Signal()
+        clean_clk2 = Signal()
         self.specials += [
             Instance("OBUFDS",
-                     i_I=self.cd_sys.clk,
+                     i_I=ClockSignal("sys"),
                      o_O=si5324_clkin.p, o_OB=si5324_clkin.n),
-            Instance("IBUFDS",
+            Instance("IBUFDS_GTE2",
                      i_I=si5324_clkout.p, i_IB=si5324_clkout.n,
                      o_O=clean_clk),
-            Instance("OBUF",
+            Instance("BUFG",
                      i_I=clean_clk,
+                     o_O=clean_clk2),
+            Instance("OBUF",
+                     i_I=clean_clk2,
                      o_O=user_sma_gpio_p)
         ]
 
@@ -60,6 +64,8 @@ class Si5324Test(BaseSoC):
 
         si5324 = self.platform.request("si5324", 0)
         self.submodules.si5324_rst_n = gpio.GPIOOut(si5324.rst_n)
+
+        self.submodules.si5324_clock_routing = Si5324ClockRouting(self.platform)
 
 if __name__ == "__main__":
     root_dir = os.path.dirname(os.path.abspath(__file__))
