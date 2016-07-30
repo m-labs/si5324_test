@@ -14,7 +14,7 @@ __all__ = ["Sequencer",
 #
 # OP=00: end program, ADDRESS=don't care, DATA_MASK=don't care
 # OP=01: write, ADDRESS=address, DATA_MASK=data
-# OP=10: wait until masked bits clear, ADDRESS=address, DATA_MASK=mask
+# OP=10: wait until masked bits set, ADDRESS=address, DATA_MASK=mask
 
 
 InstEnd = namedtuple("InstEnd", "")
@@ -89,7 +89,7 @@ class Sequencer(Module):
         fsm.act("WAIT",
             self.bus.cyc.eq(1),
             self.bus.stb.eq(1),
-            If(self.bus.ack & ((self.bus.dat_r & i_data_mask) == 0),
+            If(self.bus.ack & ((self.bus.dat_r & i_data_mask) == i_data_mask),
                 NextValue(mem_port.adr, mem_port.adr + 1),
                 NextState("FETCH")
             )

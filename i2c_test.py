@@ -12,6 +12,60 @@ from sequencer import *
 from i2c import *
 
 
+program = [
+    InstWrite(I2C_CONFIG_ADDR, int(62.5e3)),
+    InstWrite(I2C_XFER_ADDR, I2C_START),
+    InstWait(I2C_XFER_ADDR, I2C_IDLE),
+    InstWrite(I2C_XFER_ADDR, I2C_WRITE | 0x40),
+    InstWait(I2C_XFER_ADDR, I2C_IDLE),
+    InstWrite(I2C_XFER_ADDR, I2C_WRITE | 0x33),
+    InstWait(I2C_XFER_ADDR, I2C_IDLE),
+    InstWrite(I2C_XFER_ADDR, I2C_WRITE | 0x81),
+    InstWait(I2C_XFER_ADDR, I2C_IDLE),
+    InstWrite(I2C_XFER_ADDR, I2C_STOP),
+    InstWait(I2C_XFER_ADDR, I2C_IDLE),
+    InstEnd(),
+]
+
+
+# simulation
+
+class I2CSim(Module):
+    def __init__(self, pads):
+        self.submodules.i2c_master = I2CMaster(pads)
+
+        self.submodules.sequencer = Sequencer(program, self.i2c_master.bus)
+
+class _TestPads:
+    def __init__(self):
+        self.scl = Signal()
+        self.sda = Signal()
+
+
+class _TestTristate(Module):
+    def __init__(self, t):
+        oe = Signal()
+        self.comb += [
+            t.target.eq(t.o),
+            oe.eq(t.oe),
+            t.i.eq(t.o),
+        ]
+
+def _sim_gen():
+    for i in range(200):
+        yield
+
+def simulate():
+    from migen.fhdl.specials import Tristate
+
+    dut = I2CSim(_TestPads())
+
+    Tristate.lower = _TestTristate
+    run_simulation(dut, _sim_gen(), vcd_name="i2c_test.vcd")
+
+
+# build
+
 class _PLL(Module):
     def __init__(self, platform, clk_freq):
         self.clock_domains.cd_sys = ClockDomain()
@@ -64,7 +118,7 @@ class I2CTest(Module):
             ("i2c", 0,
                 Subsignal("scl", Pins("A:0")),
                 Subsignal("sda", Pins("A:1")),
-                IOStandard("LVTTL"), Misc("PULLUP"),
+                IOStandard("LVTTL"), Misc("PULLUP")
             ),
         ])
 
@@ -73,18 +127,16 @@ class I2CTest(Module):
         i2c = self.platform.request("i2c")
         self.submodules.i2c_master = I2CMaster(i2c)
 
-        program = [
-            InstWrite(I2C_CONFIG_ADDR, 62.5e3),
-            InstEnd(),
-        ]
         self.submodules.sequencer = Sequencer(program, self.i2c_master.bus)
 
 
-if __name__ == "__main__":
+def build():
     root_dir = os.path.dirname(os.path.abspath(__file__))
 
     platform = pipistrello.Platform()
     top = I2CTest(platform)
-    # from migen.fhdl.verilog import convert
-    # print(convert(top, platform.constraint_manager.get_io_signals()))
     platform.build(top, build_dir="/tmp/i2c_test")
+
+if __name__ == "__main__":
+    # simulate()
+    build()

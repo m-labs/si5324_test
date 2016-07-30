@@ -208,6 +208,8 @@ class I2CMaster(Module):
                 i2c.stop.eq(0),
                 i2c.write.eq(0),
                 i2c.read.eq(0),
+            ),
+            If(~(bus.ack | bus.we),
                 xfer.ack.eq(i2c.ack),
                 xfer.data.eq(i2c.data),
             ),
