@@ -86,13 +86,16 @@ class Si5324CRG(Module):
         self.freq = 125e6
 
         reset_ctr = Signal(32, reset=int(self.freq / 20e3)) # 20ms
-        self.comb += [
-            ResetSignal("sys").eq(reset_ctr != 0),
-        ]
+        reset = Signal(reset=1)
         self.sync.clk200 += [
             If(reset_ctr != 0,
                 reset_ctr.eq(reset_ctr - 1),
+            ).Else(
+                reset.eq(0),
             ),
+        ]
+        self.specials += [
+            Instance("BUFG", i_I=reset, o_O=self.cd_sys.rst),
         ]
 
 
@@ -120,8 +123,8 @@ class Si5324Test(Module):
 
         i2c_debug = self.platform.request("i2c_debug")
         self.comb += [
-            i2c_debug[0].eq(self.i2c_master.i2c.scl_o),
-            i2c_debug[1].eq(self.i2c_master.i2c.sda_o),
+            i2c_debug[0].eq(self.i2c_master.scl_t.i),
+            i2c_debug[1].eq(self.i2c_master.sda_t.i),
         ]
 
         # NOTE: the logical parameters DO NOT MAP to physical values written
