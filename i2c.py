@@ -175,22 +175,18 @@ class I2CMaster(Module):
         self.submodules.i2c = i2c = I2CMasterMachine(
             clock_width=20)
 
-        rd = Signal()
-        wr = Signal()
-
-        self.comb += [
-            rd.eq(bus.cyc & bus.stb & ~bus.we),
-            wr.eq(bus.ack & bus.we),
-        ]
         self.sync += [
             bus.ack.eq(0),
             If(bus.cyc & bus.stb & ~bus.ack,
-                bus.ack.eq(1)
+                bus.ack.eq(1),
             ),
-            If(rd & (bus.adr == 0),
+            If(bus.adr == 0,
                 bus.dat_r.eq(Cat(i2c.data, i2c.ack, C(0, 4), i2c.idle)),
             ),
-            If(wr & (bus.adr == 0),
+            If(bus.adr == 1,
+                bus.dat_r.eq(i2c.cg.load),
+            ),
+            If(bus.ack & bus.we & (bus.adr == 0),
                 i2c.data.eq(bus.dat_w[0:8]),
                 i2c.ack.eq(bus.dat_w[8]),
                 i2c.read.eq(bus.dat_w[9]),
@@ -203,10 +199,7 @@ class I2CMaster(Module):
                 i2c.start.eq(0),
                 i2c.stop.eq(0),
             ),
-            If(rd & (bus.adr == 1),
-                bus.dat_r.eq(i2c.cg.load),
-            ),
-            If(wr & (bus.adr == 1),
+            If(bus.ack & bus.we & (bus.adr == 1),
                 i2c.cg.load.eq(bus.dat_w),
             ),
         ]
