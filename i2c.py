@@ -150,7 +150,19 @@ class I2CMasterMachine(Module):
             fsm.ce.eq(run | self.cg.clk2x),
         ]
 
-
+# Registers:
+# config = Record([
+#     ("div",   20),
+# ])
+# xfer = Record([
+#     ("data",  8),
+#     ("ack",   1),
+#     ("read",  1),
+#     ("write", 1),
+#     ("start", 1),
+#     ("stop",  1),
+#     ("idle",  1),
+# ])
 class I2CMaster(Module):
     def __init__(self, pads, bus=None):
         if bus is None:
@@ -160,68 +172,51 @@ class I2CMaster(Module):
         ###
 
         # Wishbone
-        config = Record([
-            ("div",   20),
-        ])
-        assert len(config) <= len(bus.dat_w)
-
-        xfer = Record([
-            ("data",  8),
-            ("ack",   1),
-            ("read",  1),
-            ("write", 1),
-            ("stop",  1),
-            ("start", 1),
-            ("idle",  1),
-        ])
-        assert len(xfer) <= len(bus.dat_w)
-
-        registers = Array([
-            xfer.raw_bits(),
-            config.raw_bits()
-        ])
-
         self.submodules.i2c = i2c = I2CMasterMachine(
-            clock_width=len(config.div))
+            clock_width=20)
+
+        rd = Signal()
+        wr = Signal()
 
         self.comb += [
-            bus.dat_r.eq(registers[bus.adr]),
-            i2c.cg.load.eq(config.div),
+            rd.eq(bus.cyc & bus.stb & ~bus.we),
+            wr.eq(bus.ack & bus.we),
         ]
         self.sync += [
             bus.ack.eq(0),
             If(bus.cyc & bus.stb & ~bus.ack,
                 bus.ack.eq(1)
             ),
-            If(bus.cyc & bus.stb & bus.we,
-                registers[bus.adr].eq(bus.dat_w),
+            If(rd & (bus.adr == 0),
+                bus.dat_r.eq(Cat(i2c.data, i2c.ack, C(0, 4), i2c.idle)),
             ),
-            If(bus.ack & bus.we,
-                i2c.start.eq(xfer.start),
-                i2c.stop.eq(xfer.stop),
-                i2c.write.eq(xfer.write),
-                i2c.read.eq(xfer.read),
-                i2c.ack.eq(xfer.ack),
-                i2c.data.eq(xfer.data),
+            If(wr & (bus.adr == 0),
+                i2c.data.eq(bus.dat_w[0:8]),
+                i2c.ack.eq(bus.dat_w[8]),
+                i2c.read.eq(bus.dat_w[9]),
+                i2c.write.eq(bus.dat_w[10]),
+                i2c.start.eq(bus.dat_w[11]),
+                i2c.stop.eq(bus.dat_w[12]),
             ).Else(
+                i2c.read.eq(0),
+                i2c.write.eq(0),
                 i2c.start.eq(0),
                 i2c.stop.eq(0),
-                i2c.write.eq(0),
-                i2c.read.eq(0),
             ),
-            If(~(bus.ack | bus.we),
-                xfer.ack.eq(i2c.ack),
-                xfer.data.eq(i2c.data),
+            If(rd & (bus.adr == 1),
+                bus.dat_r.eq(i2c.cg.load),
             ),
-            xfer.idle.eq(i2c.idle),
+            If(wr & (bus.adr == 1),
+                i2c.cg.load.eq(bus.dat_w),
+            ),
         ]
 
         # I/O
         scl_t = TSTriple()
         self.specials += scl_t.get_tristate(pads.scl)
         self.comb += [
-            scl_t.oe.eq(1),
-            scl_t.o.eq(i2c.scl_o),
+            scl_t.oe.eq(~i2c.scl_o),
+            scl_t.o.eq(0),
         ]
 
         sda_t = TSTriple()
@@ -239,8 +234,8 @@ I2C_XFER_ADDR, I2C_CONFIG_ADDR = range(2)
     I2C_ACK,
     I2C_READ,
     I2C_WRITE,
-    I2C_STOP,
     I2C_START,
+    I2C_STOP,
     I2C_IDLE,
 ) = (1 << i for i in range(8, 14))
 
