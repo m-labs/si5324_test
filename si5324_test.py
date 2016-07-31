@@ -142,7 +142,7 @@ class Si5324Test(Module):
 
         # Select channel 7 of PCA9548
         i2c_sequence = [
-            [(0x74 << 1), 7],
+            [(0x74 << 1), 1 << 7],
             [(0x68 << 1), 2,   0b0010 | (4 << 4)], # BWSEL=4
             [(0x68 << 1), 3,   0b0101 | 0x10],     # SQ_ICAL=1
             [(0x68 << 1), 6,            0x07],     # SFOUT1_REG=b111
