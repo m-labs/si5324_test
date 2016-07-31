@@ -74,7 +74,9 @@ class Si5324CRG(Module):
                      i_CLKIN1=clk200_se, i_CLKFBIN=pll_fb, o_CLKFBOUT=pll_fb,
 
                      # 125MHz
-                     p_CLKOUT0_DIVIDE=8, p_CLKOUT0_PHASE=0.0, o_CLKOUT0=pll_sys,
+                     # p_CLKOUT0_DIVIDE=8, p_CLKOUT0_PHASE=0.0, o_CLKOUT0=pll_sys,
+                     # 62.5MHz
+                     p_CLKOUT0_DIVIDE=16, p_CLKOUT0_PHASE=0.0, o_CLKOUT0=pll_sys,
 
                      # 200MHz
                      p_CLKOUT1_DIVIDE=5, p_CLKOUT1_PHASE=0.0, o_CLKOUT1=pll_clk200,
@@ -83,7 +85,7 @@ class Si5324CRG(Module):
             Instance("BUFG", i_I=pll_clk200, o_O=self.cd_clk200.clk),
         ]
 
-        self.freq = 125e6
+        self.freq = 62.5e6
 
         reset_ctr = Signal(32, reset=int(self.freq / 20e3)) # 20ms
         reset = Signal(reset=1)
@@ -136,13 +138,20 @@ class Si5324Test(Module):
             NC1_LS = 7   # 8
             N2_HS  = 3   # 7
             N2_LS  = 359 # 360
-            N31    = 62
+            N31    = 62  # 63
+        elif clk_freq == 62.5e6:
+            N1_HS  = 0   # 4
+            NC1_LS = 19  # 20
+            N2_HS  = 1   # 5
+            N2_LS  = 511 # 512
+            N31    = 31  # 32
         else:
             assert False
 
-        # Select channel 7 of PCA9548
         i2c_sequence = [
+            # PCA9548: select channel 7
             [(0x74 << 1), 1 << 7],
+            # Si5324: configure
             [(0x68 << 1), 2,   0b0010 | (4 << 4)], # BWSEL=4
             [(0x68 << 1), 3,   0b0101 | 0x10],     # SQ_ICAL=1
             [(0x68 << 1), 6,            0x07],     # SFOUT1_REG=b111
