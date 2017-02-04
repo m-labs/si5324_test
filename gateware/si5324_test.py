@@ -16,11 +16,11 @@ from i2c import *
 
 class Si5324ClockRouting(Module):
     def __init__(self, platform):
-        si5324_reset    = platform.request("si5324").rst_n
-        si5324_clkin    = platform.request("si5324_clkin")
-        si5324_clkout   = platform.request("si5324_clkout")
-        user_sma_gpio_p = platform.request("user_sma_gpio_p")
-        user_sma_gpio_n = platform.request("user_sma_gpio_n")
+        si5324_reset = platform.request("si5324").rst_n
+        si5324_clkin = platform.request("si5324_clkin")
+        si5324_clkout = platform.request("si5324_clkout")
+        user_sma_clock_p = platform.request("user_sma_clock_p")
+        user_sma_clock_n = platform.request("user_sma_clock_n")
 
         self.comb += [
             si5324_reset.eq(~ResetSignal("sys")),
@@ -33,7 +33,7 @@ class Si5324ClockRouting(Module):
                      o_O=si5324_clkin.p, o_OB=si5324_clkin.n),
             Instance("OBUF",
                      i_I=dirty_clk,
-                     o_O=user_sma_gpio_n)
+                     o_O=user_sma_clock_n)
         ]
 
         clean_clk = Signal()
@@ -47,7 +47,7 @@ class Si5324ClockRouting(Module):
                      o_O=clean_clk2),
             Instance("OBUF",
                      i_I=clean_clk2,
-                     o_O=user_sma_gpio_p)
+                     o_O=user_sma_clock_p)
         ]
 
 
