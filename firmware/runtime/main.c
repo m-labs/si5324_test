@@ -36,7 +36,7 @@ int main(void)
         skew = (skew + 1) % 8;
 
         timer0_en_write(0);
-        timer0_load_write(CONFIG_CLOCK_FREQUENCY); // 1s
+        timer0_load_write(10*CONFIG_CLOCK_FREQUENCY); // 10s
         timer0_reload_write(0);
         timer0_en_write(1);
 
