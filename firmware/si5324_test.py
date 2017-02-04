@@ -17,7 +17,8 @@ class Si5324ClockRouting(Module):
         user_sma_clock_p = platform.request("user_sma_clock_p")
         user_sma_clock_n = platform.request("user_sma_clock_n")
 
-        dirty_clk = ClockSignal("sys") # 125MHz
+        dirty_clk = Signal()
+        self.sync += dirty_clk.eq(~dirty_clk)
         self.specials += [
             Instance("OBUFDS",
                      i_I=dirty_clk,

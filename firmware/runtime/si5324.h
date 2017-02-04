@@ -8,7 +8,7 @@ void si5324_write(uint8_t reg, uint8_t val);
 uint8_t si5324_read(uint8_t reg);
 
 uint16_t si5324_ident(void);
-void si5324_init_125MHz(int bwsel);
+void si5324_program(int bwsel);
 int si5324_locked(void);
 int si5324_has_input(void);
 int si5324_has_xtal(void);

@@ -19,7 +19,7 @@ int main(void)
     pca9548_select(7);
     pca9548_readback();
 
-    si5324_init_125MHz(4);
+    si5324_program(4);
     printf("waiting for ");
     printf("xtal... ");
     while(!si5324_has_xtal());

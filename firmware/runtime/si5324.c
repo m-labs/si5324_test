@@ -75,15 +75,7 @@ uint16_t si5324_ident()
     return (si5324_read(134) << 8) | si5324_read(135);
 }
 
-// Available Loop Bandwidths using BWSEL (Hz)
-//   9 (BWSEL_REG = 10)
-//   18 (BWSEL_REG = 9)
-//   36 (BWSEL_REG = 8)
-//   71 (BWSEL_REG = 7)
-//   144 (BWSEL_REG = 6)
-//   293 (BWSEL_REG = 5)
-//   606 (BWSEL_REG = 4)
-void si5324_init_125MHz(int bwsel)
+void si5324_program(int bwsel)
 {
     si5324_reset();
 
@@ -92,15 +84,20 @@ void si5324_init_125MHz(int bwsel)
         abort();
     }
 
-    // NOTE: the logical parameters DO NOT MAP to physical values written
-    // into registers. They have to be mapped; see the datasheet.
-    // DSPLLsim reports the logical parameters in the design summary, not
-    // the physical register values (but those are present separately).
+/*
+    // 125MHz
     const int N1_HS  = 1,   // 5
               NC1_LS = 7,   // 8
               N2_HS  = 3,   // 7
               N2_LS  = 359, // 360
-              N31    = 62;
+              N31    = 62;  // 63
+*/
+    // 62.5MHz
+    const int N1_HS  = 0,   // 4
+              NC1_LS = 19,  // 20
+              N2_HS  = 1,   // 5
+              N2_LS  = 511, // 512
+              N31    = 31;  // 32
 
     si5324_write(2,  (si5324_read(2) & 0x0f) | (bwsel << 4));
     si5324_write(3,  (si5324_read(3)       ) | /*SQ_ICAL=1*/0x10);
