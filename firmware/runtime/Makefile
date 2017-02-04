@@ -15,9 +15,9 @@ runtime.elf: $(OBJECTS)
 		-N -o $@ \
 		../libbase/crt0-$(CPU).o \
 		$(OBJECTS) \
-		-L../libcompiler_rt \
+		-L../libcompiler-rt \
 		-L../libbase \
-		-lbase-nofloat -lcompiler_rt
+		-lbase-nofloat -lcompiler-rt
 	@chmod -x $@
 
 %.o: $(RUNTIME_DIRECTORY)/%.c

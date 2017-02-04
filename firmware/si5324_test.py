@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.5
+#!/usr/bin/env python3
 
 import os, argparse
 
@@ -42,12 +42,6 @@ class Si5324ClockRouting(Module):
         ]
 
 class Si5324Test(BaseSoC):
-    csr_map = {
-        "i2c": 20,
-        "si5324_rst_n": 21
-    }
-    csr_map.update(BaseSoC.csr_map)
-
     def __init__(self, cpu_type="or1k", **kwargs):
         BaseSoC.__init__(self,
                          cpu_type=cpu_type,
@@ -69,9 +63,11 @@ class Si5324Test(BaseSoC):
 
         i2c = self.platform.request("i2c")
         self.submodules.i2c = gpio.GPIOTristate([i2c.scl, i2c.sda])
+        self.csr_devices.append("i2c")
 
         si5324 = self.platform.request("si5324", 0)
         self.submodules.si5324_rst_n = gpio.GPIOOut(si5324.rst_n)
+        self.csr_devices.append("si5324_rst_n")
 
         self.submodules.si5324_clock_routing = Si5324ClockRouting(self.platform)
 
